@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RaceDay – Interactive Event Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f4f7fc; color: #1a2634; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        #app { width: 100%; max-width: 1280px; min-height: 100vh; background: #ffffff; box-shadow: 0 20px 60px rgba(0,0,0,0.08); display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 0 2rem; height: 72px; background: #ffffff; border-bottom: 1px solid #eef2f6; flex-shrink: 0; position: sticky; top: 0; z-index: 100; }
+        .navbar .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.5rem; color: #0d2b3e; text-decoration: none; cursor: pointer; }
+        .navbar .brand i { color: #e63946; font-size: 1.6rem; }
+        .navbar .nav-links { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .navbar .nav-links button { background: transparent; border: none; padding: 0.5rem 1rem; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.9rem; color: #4a5a6e; cursor: pointer; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+        .navbar .nav-links button:hover { background: #f0f4f9; color: #0d2b3e; transform: translateY(-1px); }
+        .navbar .nav-links button:active { transform: scale(0.96); }
+        .navbar .nav-links button.active { background: #0d2b3e; color: #ffffff; }
+        .navbar .nav-links .user-badge { display: flex; align-items: center; gap: 8px; background: #f0f4f9; padding: 0.3rem 1rem 0.3rem 0.8rem; border-radius: 30px; font-weight: 600; font-size: 0.85rem; color: #0d2b3e; }
+        .navbar .nav-links .user-badge i { color: #e63946; }
+        .page-container { flex: 1; padding: 2rem; overflow-y: auto; background: #f8fafc; min-height: calc(100vh - 72px); }
+        .page { display: none; animation: fadeUp 0.35s ease; }
+        .page.active { display: block; }
+        @keyframes fadeUp { 0% { opacity: 0; transform: translateY(18px); } 100% { opacity: 1; transform: translateY(0); } }
+        .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 70vh; padding: 2rem 1rem; }
+        .hero .icon-circle { width: 100px; height: 100px; background: #e63946; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3.2rem; color: #fff; margin-bottom: 1.8rem; box-shadow: 0 12px 30px rgba(230,57,70,0.3); transition: transform 0.3s; }
+        .hero .icon-circle:hover { transform: rotate(-8deg) scale(1.05); }
+        .hero h1 { font-size: 3.2rem; font-weight: 800; color: #0d2b3e; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+        .hero h1 span { color: #e63946; }
+        .hero p { font-size: 1.15rem; color: #5a6e7e; max-width: 540px; margin: 0.5rem auto 2rem; line-height: 1.7; }
+        .hero .cta-group { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0.7rem 1.8rem; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.95rem; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; text-decoration: none; position: relative; overflow: hidden; }
+        .btn:active { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.6; pointer-events: none; filter: grayscale(0.3); }
+        .btn .spinner { display: none; width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+        .btn.loading .spinner { display: inline-block; }
+        .btn.loading .btn-text { opacity: 0.7; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-primary { background: #0d2b3e; color: #fff; }
+        .btn-primary:hover:not(:disabled) { background: #1a3a52; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(13,43,62,0.25); }
+        .btn-danger { background: #e63946; color: #fff; }
+        .btn-danger:hover:not(:disabled) { background: #c62836; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(230,57,70,0.3); }
+        .btn-outline { background: transparent; color: #0d2b3e; border: 2px solid #dce3ec; }
+        .btn-outline:hover:not(:disabled) { background: #f0f4f9; border-color: #b0c0d0; transform: translateY(-2px); }
+        .btn-success { background: #2a9d8f; color: #fff; }
+        .btn-success:hover:not(:disabled) { background: #21867a; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(42,157,143,0.3); }
+        .btn-warning { background: #f4a261; color: #fff; }
+        .btn-warning:hover:not(:disabled) { background: #e08f4a; transform: translateY(-2px); }
+        .btn-sm { padding: 0.4rem 1rem; font-size: 0.8rem; }
+        .btn-lg { padding: 0.9rem 2.5rem; font-size: 1.05rem; }
+        .btn-block { width: 100%; justify-content: center; }
+        .form-card { max-width: 520px; margin: 2rem auto; background: #fff; padding: 2.5rem 2.8rem; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); border: 1px solid #eef2f6; }
+        .form-card h2 { font-size: 1.8rem; font-weight: 700; color: #0d2b3e; margin-bottom: 0.3rem; }
+        .form-card .sub { color: #6a7e8e; margin-bottom: 1.8rem; font-size: 0.95rem; }
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; font-weight: 600; font-size: 0.85rem; color: #2a3a4a; margin-bottom: 4px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.7rem 1rem; font-family: 'Inter', sans-serif; font-size: 0.95rem; border: 2px solid #e2e8f0; border-radius: 10px; background: #fafcfd; transition: border 0.2s, box-shadow 0.2s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #0d2b3e; background: #ffffff; box-shadow: 0 0 0 4px rgba(13,43,62,0.08); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-hint { font-size: 0.8rem; color: #8a9aa8; margin-top: 4px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+        .card { background: #fff; border-radius: 16px; padding: 1.5rem; border: 1px solid #eef2f6; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.25s; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.06); border-color: #d0dce8; }
+        .card .badge { display: inline-block; padding: 0.2rem 0.8rem; border-radius: 30px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 0.6rem; }
+        .badge-running { background: #e8f0fe; color: #1a5ea8; }
+        .badge-cycling { background: #e6f7ee; color: #1a7a4a; }
+        .badge-walking { background: #fef3e2; color: #a86a1a; }
+        .badge-registered { background: #e8f0fe; color: #1a5ea8; }
+        .badge-completed { background: #e6f7ee; color: #1a7a4a; }
+        .badge-withdrawn { background: #fde8e8; color: #b02a2a; }
+        .badge-started { background: #fef3e2; color: #a86a1a; }
+        .card h3 { font-size: 1.15rem; margin-bottom: 0.3rem; color: #0d2b3e; }
+        .card .meta { font-size: 0.85rem; color: #6a7e8e; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0.4rem 0 0.8rem; }
+        .card .meta i { width: 18px; color: #8a9aa8; }
+        .card .actions { margin-top: 1rem; display: flex; gap: 8px; flex-wrap: wrap; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1.2rem; }
+        .section-header h2 { font-size: 1.7rem; font-weight: 700; color: #0d2b3e; }
+        .section-header .subtitle { color: #6a7e8e; font-size: 0.95rem; }
+        .toast-container { position: fixed; top: 90px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 10px; max-width: 380px; }
+        .toast { padding: 0.9rem 1.4rem; border-radius: 12px; background: #0d2b3e; color: #fff; font-weight: 500; font-size: 0.9rem; box-shadow: 0 8px 30px rgba(0,0,0,0.15); animation: slideIn 0.3s ease; display: flex; align-items: center; gap: 10px; transition: opacity 0.3s, transform 0.3s; }
+        .toast.success { background: #2a9d8f; }
+        .toast.error { background: #e63946; }
+        .toast.info { background: #1a5ea8; }
+        @keyframes slideIn { 0% { opacity: 0; transform: translateX(40px); } 100% { opacity: 1; transform: translateX(0); } }
+        .empty-state { text-align: center; padding: 3rem 1rem; color: #6a7e8e; }
+        .empty-state i { font-size: 3.5rem; color: #dce3ec; margin-bottom: 1rem; }
+        .empty-state h3 { color: #2a3a4a; margin-bottom: 0.3rem; }
+        .table-wrap { overflow-x: auto; margin-top: 1rem; border-radius: 12px; border: 1px solid #eef2f6; background: #fff; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        table th { background: #f4f7fc; text-align: left; padding: 0.8rem 1rem; font-weight: 600; color: #2a3a4a; border-bottom: 2px solid #e2e8f0; }
+        table td { padding: 0.7rem 1rem; border-bottom: 1px solid #eef2f6; color: #1a2a3a; }
+        table tr:last-child td { border-bottom: none; }
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+        .status-dot.green { background: #2a9d8f; }
+        .status-dot.blue { background: #1a5ea8; }
+        .status-dot.orange { background: #f4a261; }
+        .status-dot.red { background: #e63946; }
+        @media (max-width: 768px) {
+            .navbar { padding: 0 1rem; flex-wrap: wrap; height: auto; min-height: 64px; gap: 6px; }
+            .navbar .nav-links { gap: 4px; width: 100%; justify-content: flex-start; overflow-x: auto; padding-bottom: 6px; }
+            .navbar .nav-links button { font-size: 0.78rem; padding: 0.3rem 0.7rem; white-space: nowrap; }
+            .navbar .brand { font-size: 1.2rem; }
+            .page-container { padding: 1rem; }
+            .hero h1 { font-size: 2.2rem; }
+            .form-card { padding: 1.8rem 1.2rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .card-grid { grid-template-columns: 1fr; }
+            .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .toast-container { right: 12px; left: 12px; max-width: none; }
+        }
+        @media (max-width: 480px) {
+            .hero .icon-circle { width: 72px; height: 72px; font-size: 2.2rem; }
+            .hero h1 { font-size: 1.8rem; }
+            .btn { font-size: 0.85rem; padding: 0.6rem 1.2rem; }
+            .card { padding: 1rem; }
+        }
+        .text-muted { color: #6a7e8e; }
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1.5rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1.5rem; }
+        .text-center { text-align: center; }
+        .w-full { width: 100%; }
+        .gap-1 { gap: 8px; }
+        .gap-2 { gap: 16px; }
+        .flex-center { display: flex; align-items: center; gap: 8px; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <nav class="navbar" id="mainNav">
+            <a href="#" class="brand" id="navBrand">
+                <i class="fas fa-flag-checkered"></i> RaceDay
+            </a>
+            <div class="nav-links" id="navLinks"></div>
+        </nav>
+
+        <div class="page-container" id="pageContainer">
+            <!-- WELCOME -->
+            <div class="page active" id="page-welcome">
+                <div class="hero">
+                    <div class="icon-circle"><i class="fas fa-running"></i></div>
+                    <h1>Race<span>Day</span></h1>
+                    <p>South Africa's full‑stack event management platform for road running, walking, and cycling. Organise, enrol, and race — all in one place.</p>
+                    <div class="cta-group">
+                        <button class="btn btn-danger btn-lg" data-nav="register"><i class="fas fa-user-plus"></i> Get Started</button>
+                        <button class="btn btn-outline btn-lg" data-nav="login"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+                    </div>
+                    <div style="margin-top:2rem; font-size:0.85rem; color:#8a9aa8;">
+                        <i class="fas fa-shield-alt"></i> Built for organisers &amp; participants
+                    </div>
+                </div>
+            </div>
+
+            <!-- REGISTER -->
+            <div class="page" id="page-register">
+                <div class="form-card">
+                    <h2>Create Account</h2>
+                    <p class="sub">Join the RaceDay community</p>
+                    <form id="registerForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>First Name</label>
+                                <input type="text" id="regFirstName" placeholder="e.g. Thabo" required />
+                            </div>
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                <input type="text" id="regLastName" placeholder="e.g. Nkosi" required />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="regEmail" placeholder="you@example.com" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="regPassword" placeholder="••••••••" required minlength="6" />
+                            <div class="form-hint">At least 6 characters</div>
+                        </div>
+                        <div class="form-group">
+                            <label>I am a...</label>
+                            <select id="regRole">
+                                <option value="Participant">🏃 Participant</option>
+                                <option value="Organiser">📋 Organiser</option>
+                            </select>
+                        </div>
+                        <div id="regOrganiserFields" style="display:none;">
+                            <div class="form-group">
+                                <label>Company / Club Name</label>
+                                <input type="text" id="regCompany" placeholder="e.g. Comrades Marathon Club" />
+                            </div>
+                            <div class="form-group">
+                                <label>Registration Number</label>
+                                <input type="text" id="regRegNumber" placeholder="e.g. REG-001" />
+                            </div>
+                        </div>
+                        <div id="regParticipantFields">
+                            <div class="form-group">
+                                <label>Date of Birth</label>
+                                <input type="date" id="regDob" />
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="text" id="regPhone" placeholder="e.g. 082-123-4567" />
+                            </div>
+                            <div class="form-group">
+                                <label>Emergency Contact</label>
+                                <input type="text" id="regEmergency" placeholder="Name &amp; number" />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="registerBtn">
+                            <span class="btn-text"><i class="fas fa-user-check"></i> Register</span>
+                            <span class="spinner"></span>
+                        </button>
+                        <div class="text-center mt-2" style="font-size:0.9rem; color:#6a7e8e;">
+                            Already have an account? <a href="#" data-nav="login" style="color:#e63946; font-weight:600; text-decoration:none;">Sign in</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- LOGIN -->
+            <div class="page" id="page-login">
+                <div class="form-card">
+                    <h2>Welcome Back</h2>
+                    <p class="sub">Sign in to your RaceDay account</p>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="loginEmail" placeholder="you@example.com" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="loginPassword" placeholder="••••••••" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginBtn">
+                            <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Sign In</span>
+                            <span class="spinner"></span>
+                        </button>
+                        <div class="text-center mt-2" style="font-size:0.9rem; color:#6a7e8e;">
+                            New here? <a href="#" data-nav="register" style="color:#e63946; font-weight:600; text-decoration:none;">Create account</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div class="page" id="page-dashboard">
+                <div class="section-header">
+                    <div>
+                        <h2 id="dashGreeting">Dashboard</h2>
+                        <span class="subtitle" id="dashSub">Welcome back!</span>
+                    </div>
+                    <button class="btn btn-outline btn-sm" id="dashLogout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+                <div id="dashContent"></div>
+            </div>
+
+            <!-- EVENTS (Organiser) -->
+            <div class="page" id="page-events">
+                <div class="section-header">
+                    <div>
+                        <h2>My Events</h2>
+                        <span class="subtitle">Manage your races</span>
+                    </div>
+                    <button class="btn btn-danger btn-sm" id="showCreateEvent" data-nav="create-event"><i class="fas fa-plus"></i> Create Event</button>
+                </div>
+                <div id="eventList"></div>
+            </div>
+
+            <!-- BROWSE (Participant) -->
+            <div class="page" id="page-browse">
+                <div class="section-header">
+                    <div>
+                        <h2>Upcoming Events</h2>
+                        <span class="subtitle">Find your next race</span>
+                    </div>
+                </div>
+                <div id="browseList"></div>
+            </div>
+
+            <!-- MY ENROLMENTS (Participant) -->
+            <div class="page" id="page-enrolments">
+                <div class="section-header">
+                    <div>
+                        <h2>My Enrolments</h2>
+                        <span class="subtitle">Your race registrations</span>
+                    </div>
+                </div>
+                <div id="enrolmentList"></div>
+            </div>
+
+            <!-- CREATE EVENT -->
+            <div class="page" id="page-create-event">
+                <div class="form-card" style="max-width:680px;">
+                    <h2>Create New Event</h2>
+                    <p class="sub">Fill in the details of your race</p>
+                    <form id="createEventForm">
+                        <div class="form-group">
+                            <label>Event Name *</label>
+                            <input type="text" id="evName" placeholder="e.g. Cape Town Cycle Tour" required />
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Event Date *</label>
+                                <input type="datetime-local" id="evDate" required />
+                            </div>
+                            <div class="form-group">
+                                <label>Event Type *</label>
+                                <select id="evType" required>
+                                    <option value="Running">🏃 Running</option>
+                                    <option value="Walking">🚶 Walking</option>
+                                    <option value="Cycling">🚴 Cycling</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Location *</label>
+                            <input type="text" id="evLocation" placeholder="e.g. Cape Town" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="evDescription" rows="2" placeholder="Brief description of the event"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Max Participants</label>
+                            <input type="number" id="evMax" placeholder="e.g. 500" min="1" />
+                        </div>
+                        <hr style="border:none;border-top:2px dashed #e2e8f0;margin:1rem 0;" />
+                        <h4 style="margin-bottom:0.5rem; color:#0d2b3e;">Categories (distances)</h4>
+                        <p class="sub" style="font-size:0.85rem;">Add at least one category</p>
+                        <div id="categoryList">
+                            <div class="category-item" style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end; margin-bottom:8px;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label style="font-size:0.75rem;">Name</label>
+                                    <input type="text" class="cat-name" placeholder="e.g. 21km" />
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label style="font-size:0.75rem;">Distance (km)</label>
+                                    <input type="number" class="cat-distance" placeholder="21" step="0.01" min="0.1" />
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label style="font-size:0.75rem;">Fee (ZAR)</label>
+                                    <input type="number" class="cat-fee" placeholder="200" step="0.01" min="0" />
+                                </div>
+                                <button type="button" class="btn btn-danger btn-sm remove-category" style="margin-bottom:0; height:40px;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline btn-sm" id="addCategoryBtn"><i class="fas fa-plus"></i> Add Category</button>
+                        <div style="margin-top:1.5rem; display:flex; gap:10px; flex-wrap:wrap;">
+                            <button type="submit" class="btn btn-primary" id="createEventSubmit">
+                                <span class="btn-text"><i class="fas fa-calendar-plus"></i> Create Event</span>
+                                <span class="spinner"></span>
+                            </button>
+                            <button type="button" class="btn btn-outline" data-nav="events">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ===== DATA STORE =====
+            const DB_KEY = 'raceday_data';
+
+            function getDB() {
+                try {
+                    const raw = localStorage.getItem(DB_KEY);
+                    if (raw) return JSON.parse(raw);
+                } catch (_) { /* ignore */ }
+                return { users: [], organisers: [], participants: [], events: [], categories: [], enrolments: [], results: [], nextId: 100 };
+            }
+
+            function saveDB(db) {
+                localStorage.setItem(DB_KEY, JSON.stringify(db));
+            }
+
+            function nextId(db) {
+                return db.nextId++;
+            }
+
+            // ===== SEED =====
+            function seedDatabase() {
+                let db = getDB();
+                if (db.users.length > 0) return db;
+                const pwd = 'password123';
+                const u1 = { id: nextId(db), email: 'org1@raceday.co.za', password: pwd, firstName: 'John', lastName: 'Smith', role: 'Organiser', createdDate: new Date().toISOString() };
+                db.users.push(u1);
+                const o1 = { id: nextId(db), userId: u1.id, companyName: 'Comrades Marathon Organisers', phoneNumber: '011-123-4567', registrationNumber: 'REG-001' };
+                db.organisers.push(o1);
+                const u2 = { id: nextId(db), email: 'org2@raceday.co.za', password: pwd, firstName: 'Sarah', lastName: 'Johnson', role: 'Organiser', createdDate: new Date().toISOString() };
+                db.users.push(u2);
+                const o2 = { id: nextId(db), userId: u2.id, companyName: 'Cape Town Cycle Tours', phoneNumber: '021-987-6543', registrationNumber: 'REG-002' };
+                db.organisers.push(o2);
+                const u3 = { id: nextId(db), email: 'participant1@example.com', password: pwd, firstName: 'Alice', lastName: 'Brown', role: 'Participant', createdDate: new Date().toISOString() };
+                db.users.push(u3);
+                const p1 = { id: nextId(db), userId: u3.id, dateOfBirth: '1990-05-15', phoneNumber: '082-123-4567', emergencyContact: 'Mary Brown - 082-111-1111' };
+                db.participants.push(p1);
+                const u4 = { id: nextId(db), email: 'participant2@example.com', password: pwd, firstName: 'Bob', lastName: 'Davis', role: 'Participant', createdDate: new Date().toISOString() };
+                db.users.push(u4);
+                const p2 = { id: nextId(db), userId: u4.id, dateOfBirth: '1985-08-22', phoneNumber: '083-456-7890', emergencyContact: 'Jane Davis - 083-222-2222' };
+                db.participants.push(p2);
+                const now = new Date();
+                const e1 = { id: nextId(db), organiserId: o1.id, eventName: 'Comrades Marathon', eventDate: new Date(now.getFullYear(), now.getMonth() + 9, 15, 5, 30).toISOString(), location: 'Pietermaritzburg to Durban', eventType: 'Running', description: "The world's longest and oldest ultramarathon.", maxParticipants: 3000, createdDate: new Date().toISOString() };
+                db.events.push(e1);
+                const e2 = { id: nextId(db), organiserId: o2.id, eventName: 'Cape Town Cycle Tour', eventDate: new Date(now.getFullYear(), now.getMonth() + 6, 10, 7, 0).toISOString(), location: 'Cape Town', eventType: 'Cycling', description: 'A circular timed cycle race around the Cape Peninsula.', maxParticipants: 5000, createdDate: new Date().toISOString() };
+                db.events.push(e2);
+                const e3 = { id: nextId(db), organiserId: o1.id, eventName: 'Soweto Marathon', eventDate: new Date(now.getFullYear() + 1, 10, 5, 6, 0).toISOString(), location: 'Soweto', eventType: 'Running', description: 'Urban marathon through the streets of Soweto.', maxParticipants: 2000, createdDate: new Date().toISOString() };
+                db.events.push(e3);
+                const c1 = { id: nextId(db), eventId: e1.id, categoryName: 'Full Ultra (87km)', distance: 87, entryFee: 350, ageRestriction: 18 };
+                const c2 = { id: nextId(db), eventId: e1.id, categoryName: 'Half Marathon (21km)', distance: 21, entryFee: 200, ageRestriction: 16 };
+                const c3 = { id: nextId(db), eventId: e2.id, categoryName: '109km Route', distance: 109, entryFee: 250, ageRestriction: 16 };
+                const c4 = { id: nextId(db), eventId: e2.id, categoryName: '65km Route', distance: 65, entryFee: 200, ageRestriction: 14 };
+                const c5 = { id: nextId(db), eventId: e3.id, categoryName: 'Full Marathon (42km)', distance: 42, entryFee: 300, ageRestriction: 18 };
+                db.categories.push(c1, c2, c3, c4, c5);
+                const en1 = { id: nextId(db), participantId: p1.id, categoryId: c1.id, status: 'Registered', enrolmentDate: new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString() };
+                const en2 = { id: nextId(db), participantId: p1.id, categoryId: c5.id, status: 'Registered', enrolmentDate: new Date(now.getFullYear(), now.getMonth() - 1, 5).toISOString() };
+                const en3 = { id: nextId(db), participantId: p2.id, categoryId: c2.id, status: 'Registered', enrolmentDate: new Date(now.getFullYear(), now.getMonth() - 1, 10).toISOString() };
+                db.enrolments.push(en1, en2, en3);
+                const r1 = { id: nextId(db), enrolmentId: en1.id, timeCompleted: 36000, placementRank: 150, dateCompleted: new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString() };
+                const r2 = { id: nextId(db), enrolmentId: en3.id, timeCompleted: 7200, placementRank: 45, dateCompleted: new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString() };
+                db.results.push(r1, r2);
+                saveDB(db);
+                return db;
+            }
+
+            // ===== STATE =====
+            let currentUser = null;
+            let currentParticipant = null;
+            let currentOrganiser = null;
+            let db = seedDatabase();
+
+            const $ = (sel) => document.querySelector(sel);
+            const $$ = (sel) => document.querySelectorAll(sel);
+            const navLinks = $('#navLinks');
+            const pages = {
+                welcome: $('#page-welcome'),
+                register: $('#page-register'),
+                login: $('#page-login'),
+                dashboard: $('#page-dashboard'),
+                events: $('#page-events'),
+                browse: $('#page-browse'),
+                enrolments: $('#page-enrolments'),
+                createEvent: $('#page-create-event'),
+            };
+            const dashGreeting = $('#dashGreeting');
+            const dashSub = $('#dashSub');
+            const dashContent = $('#dashContent');
+            const eventList = $('#eventList');
+            const browseList = $('#browseList');
+            const enrolmentList = $('#enrolmentList');
+
+            function toast(message, type = 'info') {
+                const container = $('#toastContainer');
+                const el = document.createElement('div');
+                el.className = `toast ${type}`;
+                const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
+                el.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${message}`;
+                container.appendChild(el);
+                setTimeout(() => {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateX(40px)';
+                    setTimeout(() => el.remove(), 300);
+                }, 3500);
+            }
+
+            function setLoading(btn, loading) {
+                if (!btn) return;
+                if (loading) { btn.classList.add('loading'); btn.disabled = true; } else { btn.classList.remove('loading'); btn.disabled = false; }
+            }
+
+            function navigate(pageId) {
+                if (pageId === 'create-event' && (!currentUser || currentUser.role !== 'Organiser')) {
+                    toast('Please register as an organiser to create events.', 'error');
+                    return;
+                }
+                Object.values(pages).forEach(p => p.classList.remove('active'));
+                if (pages[pageId]) pages[pageId].classList.add('active');
+                else pages.welcome.classList.add('active');
+
+                $$('#navLinks button[data-nav]').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.nav === pageId);
+                });
+
+                if (pageId === 'dashboard') renderDashboard();
+                if (pageId === 'events') renderEvents();
+                if (pageId === 'browse') renderBrowse();
+                if (pageId === 'enrolments') renderEnrolments();
+
+                document.getElementById('pageContainer').scrollTop = 0;
+            }
+
+            function buildNav() {
+                let html = '';
+                if (!currentUser) {
+                    html = `
+                        <button data-nav="welcome" class="active"><i class="fas fa-home"></i> Home</button>
+                        <button data-nav="register"><i class="fas fa-user-plus"></i> Register</button>
+                        <button data-nav="login"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+                    `;
+                } else {
+                    const isOrg = currentUser.role === 'Organiser';
+                    html = `
+                        <button data-nav="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+                        ${isOrg ? `<button data-nav="events"><i class="fas fa-calendar-alt"></i> My Events</button>` : ''}
+                        ${!isOrg ? `<button data-nav="browse"><i class="fas fa-search"></i> Browse Events</button>` : ''}
+                        ${!isOrg ? `<button data-nav="enrolments"><i class="fas fa-list"></i> My Enrolments</button>` : ''}
+                        <span class="user-badge"><i class="fas fa-user-circle"></i> ${currentUser.firstName} (${currentUser.role})</span>
+                        <button id="navLogout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    `;
+                }
+                navLinks.innerHTML = html;
+            }
+
+            function registerUser(e) {
+                e.preventDefault();
+                const btn = $('#registerBtn');
+                setLoading(btn, true);
+                setTimeout(() => {
+                    const firstName = $('#regFirstName').value.trim();
+                    const lastName = $('#regLastName').value.trim();
+                    const email = $('#regEmail').value.trim();
+                    const password = $('#regPassword').value;
+                    const role = $('#regRole').value;
+                    if (!firstName || !lastName || !email || password.length < 6) {
+                        toast('Please fill all fields and use at least 6 characters for password.', 'error');
+                        setLoading(btn, false);
+                        return;
+                    }
+                    if (db.users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+                        toast('Email already registered. Please sign in.', 'error');
+                        setLoading(btn, false);
+                        return;
+                    }
+                    const user = { id: nextId(db), email, password, firstName, lastName, role, createdDate: new Date().toISOString() };
+                    db.users.push(user);
+                    if (role === 'Organiser') {
+                        const company = $('#regCompany').value.trim() || `${firstName}'s Club`;
+                        const regNumber = $('#regRegNumber').value.trim() || `REG-${String(user.id).padStart(3,'0')}`;
+                        db.organisers.push({ id: nextId(db), userId: user.id, companyName: company, phoneNumber: $('#regPhone').value.trim() || '', registrationNumber: regNumber });
+                    } else {
+                        db.participants.push({ id: nextId(db), userId: user.id, dateOfBirth: $('#regDob').value || null, phoneNumber: $('#regPhone').value.trim() || '', emergencyContact: $('#regEmergency').value.trim() || '' });
+                    }
+                    saveDB(db);
+                    toast('Account created! You are now signed in.', 'success');
+                    loginUserDirect(email, password, () => {
+                        setLoading(btn, false);
+                        $('#registerForm').reset();
+                        $('#regOrganiserFields').style.display = 'none';
+                        $('#regParticipantFields').style.display = 'block';
+                    });
+                }, 400);
+            }
+
+            function loginUserDirect(email, password, callback) {
+                const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+                if (!user) {
+                    toast('Invalid email or password.', 'error');
+                    if (callback) callback();
+                    return false;
+                }
+                currentUser = user;
+                currentParticipant = db.participants.find(p => p.userId === user.id) || null;
+                currentOrganiser = db.organisers.find(o => o.userId === user.id) || null;
+                buildNav();
+                navigate('dashboard');
+                toast(`Welcome back, ${user.firstName}!`, 'success');
+                if (callback) callback();
+                return true;
+            }
+
+            function loginUser(e) {
+                e.preventDefault();
+                const btn = $('#loginBtn');
+                setLoading(btn, true);
+                setTimeout(() => {
+                    const email = $('#loginEmail').value.trim();
+                    const password = $('#loginPassword').value;
+                    const success = loginUserDirect(email, password, () => setLoading(btn, false));
+                    if (!success) setLoading(btn, false);
+                }, 400);
+            }
+
+            function logout() {
+                currentUser = null;
+                currentParticipant = null;
+                currentOrganiser = null;
+                buildNav();
+                navigate('welcome');
+                toast('You have been logged out.', 'info');
+            }
+
+            function renderDashboard() {
+                if (!currentUser) return;
+                dashGreeting.textContent = `Hello, ${currentUser.firstName}!`;
+                dashSub.textContent = currentUser.role === 'Organiser' ? 'Manage your events and registrations.' : 'Find races, enrol, and track your results.';
+                const isOrg = currentUser.role === 'Organiser';
+                if (isOrg) {
+                    const org = currentOrganiser;
+                    const myEvents = db.events.filter(e => e.organiserId === org.id);
+                    const totalEnrolments = db.enrolments.filter(en => {
+                        const cat = db.categories.find(c => c.id === en.categoryId);
+                        if (!cat) return false;
+                        return db.events.some(e => e.id === cat.eventId && e.organiserId === org.id);
+                    }).length;
+                    dashContent.innerHTML = `
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:1rem; margin-bottom:2rem;">
+                            <div class="card" style="text-align:center;"><div style="font-size:2rem; font-weight:800; color:#0d2b3e;">${myEvents.length}</div><div style="color:#6a7e8e;">Your Events</div></div>
+                            <div class="card" style="text-align:center;"><div style="font-size:2rem; font-weight:800; color:#e63946;">${totalEnrolments}</div><div style="color:#6a7e8e;">Total Enrolments</div></div>
+                            <div class="card" style="text-align:center;"><div style="font-size:2rem; font-weight:800; color:#2a9d8f;">${db.events.length}</div><div style="color:#6a7e8e;">Total Events</div></div>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="btn btn-danger" data-nav="events"><i class="fas fa-calendar-alt"></i> Manage Events</button>
+                            <button class="btn btn-success" data-nav="create-event"><i class="fas fa-plus"></i> Create New Event</button>
+                        </div>
+                        <div style="margin-top:2rem; background:#fff; border-radius:16px; border:1px solid #eef2f6; padding:1.5rem;">
+                            <h4 style="margin-bottom:0.5rem;">Recent Activity</h4>
+                            ${myEvents.length === 0 ? '<p class="text-muted">You haven\'t created any events yet.</p>' : ''}
+                            ${myEvents.slice(0,3).map(e => {
+                                const catCount = db.categories.filter(c => c.eventId === e.id).length;
+                                const enrolCount = db.enrolments.filter(en => { const c = db.categories.find(cat => cat.id === en.categoryId); return c && c.eventId === e.id; }).length;
+                                return `<div style="padding:0.6rem 0; border-bottom:1px solid #f0f4f9; display:flex; justify-content:space-between; flex-wrap:wrap;"><span><strong>${e.eventName}</strong> — ${new Date(e.eventDate).toLocaleDateString()}</span><span class="text-muted">${catCount} categories · ${enrolCount} enrolments</span></div>`;
+                            }).join('')}
+                        </div>
+                    `;
+                } else {
+                    const part = currentParticipant;
+                    const myEnrols = db.enrolments.filter(en => en.participantId === part.id);
+                    const myResults = db.results.filter(r => { const en = db.enrolments.find(e => e.id === r.enrolmentId); return en && en.participantId === part.id; });
+                    dashContent.innerHTML = `
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:1rem; margin-bottom:2rem;">
+                            <div class="card" style="text-align:center;"><div style="font-size:2rem; font-weight:800; color:#0d2b3e;">${myEnrols.length}</div><div style="color:#6a7e8e;">My Enrolments</div></div>
+                            <div class="card" style="text-align:center;"><div style="font-size:2rem; font-weight:800; color:#2a9d8f;">${myResults.length}</div><div style="color:#6a7e8e;">Results</div></div>
+                            <div class="card" style="text-align:center;"><div style="font-size:2rem; font-weight:800; color:#e63946;">${db.events.length}</div><div style="color:#6a7e8e;">Available Events</div></div>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="btn btn-danger" data-nav="browse"><i class="fas fa-search"></i> Browse Events</button>
+                            <button class="btn btn-success" data-nav="enrolments"><i class="fas fa-list"></i> My Enrolments</button>
+                        </div>
+                        <div style="margin-top:2rem; background:#fff; border-radius:16px; border:1px solid #eef2f6; padding:1.5rem;">
+                            <h4 style="margin-bottom:0.5rem;">Your Recent Enrolments</h4>
+                            ${myEnrols.length === 0 ? '<p class="text-muted">You haven\'t enrolled in any events yet.</p>' : ''}
+                            ${myEnrols.slice(0,3).map(en => {
+                                const cat = db.categories.find(c => c.id === en.categoryId);
+                                const ev = cat ? db.events.find(e => e.id === cat.eventId) : null;
+                                return `<div style="padding:0.6rem 0; border-bottom:1px solid #f0f4f9; display:flex; justify-content:space-between; flex-wrap:wrap;"><span><strong>${ev ? ev.eventName : 'Unknown'}</strong> — ${cat ? cat.categoryName : ''}</span><span class="badge ${en.status === 'Registered' ? 'badge-registered' : en.status === 'Completed' ? 'badge-completed' : en.status === 'Withdrawn' ? 'badge-withdrawn' : 'badge-started'}">${en.status}</span></div>`;
+                            }).join('')}
+                        </div>
+                    `;
+                }
+            }
+
+            function renderEvents() {
+                if (!currentUser || currentUser.role !== 'Organiser') return;
+                const org = currentOrganiser;
+                const myEvents = db.events.filter(e => e.organiserId === org.id);
+                if (myEvents.length === 0) {
+                    eventList.innerHTML = `<div class="empty-state"><i class="fas fa-calendar-plus"></i><h3>No events yet</h3><p>Create your first event to get started.</p><button class="btn btn-danger" data-nav="create-event"><i class="fas fa-plus"></i> Create Event</button></div>`;
+                    return;
+                }
+                eventList.innerHTML = `<div class="card-grid">${myEvents.map(e => {
+                    const cats = db.categories.filter(c => c.eventId === e.id);
+                    const enrolCount = db.enrolments.filter(en => { const c = db.categories.find(cat => cat.id === en.categoryId); return c && c.eventId === e.id; }).length;
+                    const badgeClass = e.eventType === 'Running' ? 'badge-running' : e.eventType === 'Cycling' ? 'badge-cycling' : 'badge-walking';
+                    return `<div class="card"><span class="badge ${badgeClass}">${e.eventType}</span><h3>${e.eventName}</h3><div class="meta"><span><i class="fas fa-calendar-day"></i> ${new Date(e.eventDate).toLocaleDateString()}</span><span><i class="fas fa-map-marker-alt"></i> ${e.location}</span></div><div class="meta"><span><i class="fas fa-tag"></i> ${cats.length} categories</span><span><i class="fas fa-user"></i> ${enrolCount} enrolments</span></div><div style="font-size:0.85rem; color:#6a7e8e; margin:0.3rem 0 0.6rem;">${e.description || ''}</div><div class="actions"><button class="btn btn-outline btn-sm view-event-cats" data-eventid="${e.id}"><i class="fas fa-list"></i> Categories</button></div></div>`;
+                }).join('')}</div>`;
+                eventList.querySelectorAll('.view-event-cats').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const eid = parseInt(this.dataset.eventid);
+                        const cats = db.categories.filter(c => c.eventId === eid);
+                        const ev = db.events.find(e => e.id === eid);
+                        let msg = `${ev.eventName} — Categories:\n\n`;
+                        cats.forEach(c => { const count = db.enrolments.filter(en => en.categoryId === c.id).length; msg += `• ${c.categoryName} (${c.distance}km) · R${c.entryFee} · ${count} enrolled\n`; });
+                        alert(msg);
+                    });
+                });
+            }
+
+            function renderBrowse() {
+                if (!currentUser || currentUser.role !== 'Participant') return;
+                const part = currentParticipant;
+                const allEvents = db.events.sort((a,b) => new Date(a.eventDate) - new Date(b.eventDate));
+                if (allEvents.length === 0) {
+                    browseList.innerHTML = `<div class="empty-state"><i class="fas fa-running"></i><h3>No events available</h3><p>Check back later for new races.</p></div>`;
+                    return;
+                }
+                browseList.innerHTML = `<div class="card-grid">${allEvents.map(e => {
+                    const cats = db.categories.filter(c => c.eventId === e.id);
+                    const badgeClass = e.eventType === 'Running' ? 'badge-running' : e.eventType === 'Cycling' ? 'badge-cycling' : 'badge-walking';
+                    const isPast = new Date(e.eventDate) < new Date();
+                    return `<div class="card" style="${isPast ? 'opacity:0.6;' : ''}"><span class="badge ${badgeClass}">${e.eventType} ${isPast ? '· Past' : ''}</span><h3>${e.eventName}</h3><div class="meta"><span><i class="fas fa-calendar-day"></i> ${new Date(e.eventDate).toLocaleDateString()}</span><span><i class="fas fa-map-marker-alt"></i> ${e.location}</span></div><div style="font-size:0.85rem; color:#6a7e8e; margin:0.3rem 0 0.6rem;">${e.description || ''}</div><div class="actions"><button class="btn btn-primary btn-sm enrol-btn" data-eventid="${e.id}" ${isPast ? 'disabled' : ''}><i class="fas fa-plus"></i> Enrol</button></div></div>`;
+                }).join('')}</div>`;
+                browseList.querySelectorAll('.enrol-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const eid = parseInt(this.dataset.eventid);
+                        showEnrolDialog(eid);
+                    });
+                });
+            }
+
+            function showEnrolDialog(eventId) {
+                const ev = db.events.find(e => e.id === eventId);
+                if (!ev) return;
+                const cats = db.categories.filter(c => c.eventId === eventId);
+                if (cats.length === 0) { toast('This event has no categories available.', 'error'); return; }
+                const part = currentParticipant;
+                const enrolledCatIds = db.enrolments.filter(en => en.participantId === part.id).map(en => en.categoryId);
+                const choice = prompt(`Enrol in "${ev.eventName}"\n\nSelect a category by number:\n\n` + cats.map((c,i) => `${i+1}. ${c.categoryName} (${c.distance}km) · R${c.entryFee} ${enrolledCatIds.includes(c.id) ? '✅' : ''}`).join('\n') + `\n\nEnter 1-${cats.length} (or Cancel):`);
+                if (choice === null) return;
+                const idx = parseInt(choice) - 1;
+                if (isNaN(idx) || idx < 0 || idx >= cats.length) { toast('Invalid selection.', 'error'); return; }
+                const cat = cats[idx];
+                if (enrolledCatIds.includes(cat.id)) { toast('You are already enrolled in this category.', 'error'); return; }
+                db.enrolments.push({ id: nextId(db), participantId: part.id, categoryId: cat.id, status: 'Registered', enrolmentDate: new Date().toISOString() });
+                saveDB(db);
+                toast(`Enrolled in ${cat.categoryName}!`, 'success');
+                renderBrowse();
+            }
+
+            function renderEnrolments() {
+                if (!currentUser || currentUser.role !== 'Participant') return;
+                const part = currentParticipant;
+                const myEnrols = db.enrolments.filter(en => en.participantId === part.id);
+                if (myEnrols.length === 0) {
+                    enrolmentList.innerHTML = `<div class="empty-state"><i class="fas fa-list"></i><h3>No enrolments yet</h3><p>Browse events and enrol in a race.</p><button class="btn btn-danger" data-nav="browse"><i class="fas fa-search"></i> Browse Events</button></div>`;
+                    return;
+                }
+                enrolmentList.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Event</th><th>Category</th><th>Distance</th><th>Status</th><th>Result</th></tr></thead><tbody>${myEnrols.map(en => {
+                    const cat = db.categories.find(c => c.id === en.categoryId);
+                    const ev = cat ? db.events.find(e => e.id === cat.eventId) : null;
+                    const result = db.results.find(r => r.enrolmentId === en.id);
+                    const statusClass = en.status === 'Registered' ? 'blue' : en.status === 'Completed' ? 'green' : en.status === 'Withdrawn' ? 'red' : 'orange';
+                    return `<tr><td><strong>${ev ? ev.eventName : 'Unknown'}</strong></td><td>${cat ? cat.categoryName : '—'}</td><td>${cat ? cat.distance + 'km' : '—'}</td><td><span class="status-dot ${statusClass}"></span> ${en.status}</td><td>${result ? `${Math.floor(result.timeCompleted/60)}h ${result.timeCompleted%60}m · #${result.placementRank}` : '—'}</td></tr>`;
+                }).join('')}</tbody></table></div>`;
+            }
+
+            function initCreateEvent() {
+                const form = $('#createEventForm');
+                const addBtn = $('#addCategoryBtn');
+                const catList = $('#categoryList');
+                catList.addEventListener('click', function(e) {
+                    const removeBtn = e.target.closest('.remove-category');
+                    if (removeBtn) {
+                        const items = catList.querySelectorAll('.category-item');
+                        if (items.length > 1) { removeBtn.closest('.category-item').remove(); } else { toast('You need at least one category.', 'error'); }
+                    }
+                });
+                addBtn.addEventListener('click', function() {
+                    const item = document.createElement('div');
+                    item.className = 'category-item';
+                    item.style.cssText = 'display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end; margin-bottom:8px;';
+                    item.innerHTML = `<div class="form-group" style="margin-bottom:0;"><label style="font-size:0.75rem;">Name</label><input type="text" class="cat-name" placeholder="e.g. 10km" /></div><div class="form-group" style="margin-bottom:0;"><label style="font-size:0.75rem;">Distance (km)</label><input type="number" class="cat-distance" placeholder="10" step="0.01" min="0.1" /></div><div class="form-group" style="margin-bottom:0;"><label style="font-size:0.75rem;">Fee (ZAR)</label><input type="number" class="cat-fee" placeholder="150" step="0.01" min="0" /></div><button type="button" class="btn btn-danger btn-sm remove-category" style="margin-bottom:0; height:40px;"><i class="fas fa-times"></i></button>`;
+                    catList.appendChild(item);
+                });
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    if (!currentUser || currentUser.role !== 'Organiser') { toast('You must be an organiser to create events.', 'error'); return; }
+                    const btn = $('#createEventSubmit');
+                    setLoading(btn, true);
+                    setTimeout(() => {
+                        const name = $('#evName').value.trim();
+                        const date = $('#evDate').value;
+                        const type = $('#evType').value;
+                        const location = $('#evLocation').value.trim();
+                        const description = $('#evDescription').value.trim();
+                        const max = parseInt($('#evMax').value) || null;
+                        if (!name || !date || !location) { toast('Please fill in all required fields.', 'error'); setLoading(btn, false); return; }
+                        const catItems = catList.querySelectorAll('.category-item');
+                        const cats = [];
+                        catItems.forEach(item => {
+                            const n = item.querySelector('.cat-name').value.trim();
+                            const d = parseFloat(item.querySelector('.cat-distance').value);
+                            const f = parseFloat(item.querySelector('.cat-fee').value) || 0;
+                            if (n && d > 0) cats.push({ name: n, distance: d, fee: f });
+                        });
+                        if (cats.length === 0) { toast('Add at least one valid category.', 'error'); setLoading(btn, false); return; }
+                        const org = currentOrganiser;
+                        const event = { id: nextId(db), organiserId: org.id, eventName: name, eventDate: new Date(date).toISOString(), location, eventType: type, description, maxParticipants: max, createdDate: new Date().toISOString() };
+                        db.events.push(event);
+                        cats.forEach(c => { db.categories.push({ id: nextId(db), eventId: event.id, categoryName: c.name, distance: c.distance, entryFee: c.fee, ageRestriction: null }); });
+                        saveDB(db);
+                        toast(`Event "${name}" created with ${cats.length} categories!`, 'success');
+                        form.reset();
+                        catList.innerHTML = `<div class="category-item" style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; align-items:end; margin-bottom:8px;"><div class="form-group" style="margin-bottom:0;"><label style="font-size:0.75rem;">Name</label><input type="text" class="cat-name" placeholder="e.g. 21km" /></div><div class="form-group" style="margin-bottom:0;"><label style="font-size:0.75rem;">Distance (km)</label><input type="number" class="cat-distance" placeholder="21" step="0.01" min="0.1" /></div><div class="form-group" style="margin-bottom:0;"><label style="font-size:0.75rem;">Fee (ZAR)</label><input type="number" class="cat-fee" placeholder="200" step="0.01" min="0" /></div><button type="button" class="btn btn-danger btn-sm remove-category" style="margin-bottom:0; height:40px;"><i class="fas fa-times"></i></button></div>`;
+                        setLoading(btn, false);
+                        navigate('events');
+                    }, 400);
+                });
+            }
+
+            function initRegisterToggle() {
+                const roleSelect = $('#regRole');
+                const orgFields = $('#regOrganiserFields');
+                const partFields = $('#regParticipantFields');
+                roleSelect.addEventListener('change', function() {
+                    if (this.value === 'Organiser') { orgFields.style.display = 'block'; partFields.style.display = 'none'; } else { orgFields.style.display = 'none'; partFields.style.display = 'block'; }
+                });
+                roleSelect.dispatchEvent(new Event('change'));
+            }
+
+            function setupGlobalDelegation() {
+                document.addEventListener('click', function(e) {
+                    const navEl = e.target.closest('[data-nav]');
+                    if (navEl) {
+                        e.preventDefault();
+                        navigate(navEl.dataset.nav);
+                        return;
+                    }
+                    if (e.target.closest('#navBrand')) {
+                        e.preventDefault();
+                        navigate(currentUser ? 'dashboard' : 'welcome');
+                        return;
+                    }
+                    if (e.target.closest('#navLogout') || e.target.closest('#dashLogout')) {
+                        e.preventDefault();
+                        logout();
+                        return;
+                    }
+                });
+            }
+
+            function init() {
+                // Direct listeners for hero CTA buttons (fallback & clarity)
+                const heroGetStarted = document.querySelector('.hero .btn-danger[data-nav="register"]');
+                const heroSignIn = document.querySelector('.hero .btn-outline[data-nav="login"]');
+                if (heroGetStarted) {
+                    heroGetStarted.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        navigate('register');
+                    });
+                }
+                if (heroSignIn) {
+                    heroSignIn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        navigate('login');
+                    });
+                }
+
+                // Brand click – go to dashboard if logged in, otherwise welcome
+                document.getElementById('navBrand').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (currentUser) {
+                        navigate('dashboard');
+                    } else {
+                        navigate('welcome');
+                    }
+                });
+
+                document.getElementById('registerForm').addEventListener('submit', registerUser);
+                document.getElementById('loginForm').addEventListener('submit', loginUser);
+                initRegisterToggle();
+                initCreateEvent();
+                setupGlobalDelegation();
+                buildNav();
+                navigate('welcome');
+            }
+
+            document.addEventListener('DOMContentLoaded', init);
+        })();
+    </script>
+</body>
+</html>
