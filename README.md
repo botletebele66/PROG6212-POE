@@ -1,4 +1,4 @@
-# 🏃 RaceDay — Event Management System
+# 🏃 RaceDay: Event Management System
 
 ### Part 1: System Planning and Database Design
 
@@ -91,11 +91,11 @@ The database consists of **7 entities** with the following relationships:
 
 ### Key Design Decisions
 
-- **Role Separation** — `Users` is split from `Organiser`/`Participant` to avoid nullable columns and keep role-specific data properly scoped.
-- **Many-to-Many Resolution** — The `Enrolment` table resolves the many-to-many relationship between `Participants` and `EventCategories`.
-- **Result Separation** — `Result` is kept separate from `Enrolment` since not every enrolment has a result yet (only completed races).
-- **Data Integrity** — `UNIQUE(ParticipantID, CategoryID)` on `Enrolment` prevents duplicate registrations.
-- **Cascade Deletes** — Applied down the ownership chain to maintain data consistency.
+- **Role Separation**:  `Users` is split from `Organiser`/`Participant` to avoid nullable columns and keep role-specific data properly scoped.
+- **Many-to-Many Resolution**: The `Enrolment` table resolves the many-to-many relationship between `Participants` and `EventCategories`.
+- **Result Separation**: `Result` is kept separate from `Enrolment` since not every enrolment has a result yet (only completed races).
+- **Data Integrity**: `UNIQUE(ParticipantID, CategoryID)` on `Enrolment` prevents duplicate registrations.
+- **Cascade Deletes**:  Applied down the ownership chain to maintain data consistency.
 
 ---
 
@@ -135,10 +135,10 @@ The database schema (`/docs/database-schema.sql`) includes:
 ### Third-Party API Integration (Planned)
 
 **Google Maps Platform APIs**
-- Routes API — Compute routes with real-time traffic
-- Geocoding API — Convert addresses to coordinates
-- Places API — Autocomplete and place details
-- Elevation API — Elevation data for routes
+- Routes API: Compute routes with real-time traffic
+- Geocoding API: Convert addresses to coordinates
+- Places API: Autocomplete and place details
+- Elevation API: Elevation data for routes
 
 **Weather APIs**
 - Google Weather API *(recommended for Maps integration)*
@@ -168,7 +168,7 @@ The repository includes a CI/CD workflow (`/.github/workflows/ci.yml`) that:
 
 ## 🎥 Video Presentation
 
-**[Watch the Video Presentation](#)** The link will be provided
+https://youtu.be/qjv4jQ3NKVc
 
 The video covers:
 
